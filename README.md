@@ -8,6 +8,8 @@ python >= 3.4
 
 requests
 
+websocket
+
 ## Installing
 
 ### Step 1: Easy start
@@ -27,6 +29,7 @@ Now your environment is setup. To activate your environment enter the below comm
 Say you used the name 'misty_developer' in the conda create step
 ```
 source activate misty_developer
+pip install websocket
 ```
 
 ### Step 2: Self Setup 
@@ -35,6 +38,7 @@ use the command after setting up python >= 3.4
 ```
 pip install mistyPy
 pip install requests
+pip install websocket
 ```
 
 ## Current support
