@@ -22,13 +22,14 @@ https://www.anaconda.com/download/
 ```
 Enter the following in your terminal 
 ```
-conda create -n <your_custom_environment_name> python=3.4 requests mistyPy
+conda create -n <your_custom_environment_name> python=3.4 requests
 ```
 Now your environment is setup. To activate your environment enter the below command in your terminal:
 
 Say you used the name 'misty_developer' in the conda create step
 ```
 source activate misty_developer
+pip install mistyPy
 pip install websocket
 ```
 
