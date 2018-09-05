@@ -32,6 +32,12 @@ source activate misty_developer
 pip install mistyPy
 pip install websocket
 ```
+skip step 2
+```
+Note:
+Everytime you open a new termial, enter 
+source activate <your_custom_environment_name>
+```
 
 ### Step 2: Self Setup 
 
