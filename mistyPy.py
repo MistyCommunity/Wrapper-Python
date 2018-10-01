@@ -16,14 +16,17 @@ class Robot:
 
         self.images_saved = []
         self.audio_saved  = []
+        self.faces_saved = []
 
         self.backpack_instance = None
         self.time_of_flight_instance = [None]*4
+        self.face_recognition_instance = None
 
         self.available_subscriptions = ["StringMessage","TimeOfFlight","FaceDetection","FaceRecognition","LocomotionCommand","HaltCommand","SelfState","WorldState"]
 
         self.populateImages()
         self.populateAudio()
+        self.populateLearnedFaces()
 
     def changeLED(self,red,green,blue):
         assert red in range(0,256) and blue in range(0,256) and green in range(0,256), " changeLED: The colors need to be in 0-255 range"
@@ -92,10 +95,16 @@ class Robot:
 
     def populateAudio(self):
         self.audio_saved = []
-        resp = requests.get('http://'+self.ip+'/api/audio/clips')
+        resp = requests.get('http://'+self.ip+'/api/audio')
         for reply in resp.json():
             for out in reply["result"]:
                 self.audio_saved.append(out["name"])
+
+    def populateLearnedFaces(self):
+        self.faces_saved = []
+        resp = requests.get('http://'+self.ip+'/api/beta/faces')
+        for reply in resp.json():
+            self.faces_saved = reply["result"]
 
     def printImageList(self):
         print(self.images_saved)
@@ -112,12 +121,46 @@ class Robot:
     def printSubscriptionList(self):
         print(self.available_subscriptions)
 
+    def startFaceRecognition(self):
+        requests.post('http://'+self.ip+'/api/beta/faces/recognition/start')
+    
+    def stopFaceRecognition(self):
+        requests.post('http://'+self.ip+'/api/beta/faces/recognition/stop')
+
+    def printLearnedFaces(self):
+        print(self.faces_saved)
+
+    def getLearnedFaces(self):
+        return self.faces_saved
+
+    def clearLearnedFaces(self):
+        requests.post('http://'+self.ip+'/api/beta/faces/clearall')
+        self.faces_saved = []
+    
+    def learnFace(self,name):
+        assert isinstance(name, str), " trainFace: name must be a string"
+        requests.post('http://'+self.ip+'/api/beta/faces/training/start',json={"FaceId": name})
+        print("Please look at Misty's face for 15 seconds..")
+        for i in range(15):
+            print(15-i)
+            time.sleep(1)
+        print("Face Captured!!")
+        print("Please allow 15 second processing time !")
+        for i in range(15):
+            print(15-i)
+            time.sleep(1)
+        print("Face Trained")
+        self.populateLearnedFaces()
+
     ##### WEB SOCKETS #####
 
     def backpack(self):
         if self.backpack_instance is not None:
             data = self.backpack_instance.data
-            return json.loads(data)["message"]["message"]
+            try:
+                return json.loads(data)["message"]["message"]
+            except:
+                return json.loads(data)
 
         else:
             return " Backpack data is not subscribed, use the command robot_name.subscribe(\"StringMessage\")"
@@ -140,6 +183,14 @@ class Robot:
         else:
             return " TimeOfFlight not subscribed, use the command robot_name.subscribe(\"TimeOfFlight\")"
 
+    def faceRec(self):
+        data = json.loads(self.face_recognition_instance.data)
+        try:
+            out = "{ \"personName\" : \"" + data["message"]["personName"] + "\", \"distance\" : \"" + str(data["message"]["distance"]) + "\", \"elevation\" :\"" + str(data["message"]["elevation"]) + "\"}"
+            return(json.loads(out))
+        except:
+            return json.loads(self.face_recognition_instance.data)
+        
 
     def subscribe(self,Type,value=None,debounce =0):
         assert isinstance(Type, str), " subscribe: type name need to be string"
@@ -147,21 +198,27 @@ class Robot:
         if Type in self.available_subscriptions:
 
             if Type == "StringMessage":
-                
-                self.backpack_instance = Socket(self.ip,Type,_value=value, _debounce = debounce)
-                time.sleep(1)
+                if self.backpack_instance is  None:
+                    self.backpack_instance = Socket(self.ip,Type,_value=value, _debounce = debounce)
+                    time.sleep(1)
 
             elif Type ==  "TimeOfFlight":
-                
-                self.time_of_flight_instance[0] = Socket(self.ip,Type,_value="Left", _debounce = debounce)
-                time.sleep(0.05)
-                self.time_of_flight_instance[1] = Socket(self.ip,Type,_value="Center", _debounce = debounce)
-                time.sleep(0.05)
-                self.time_of_flight_instance[2] = Socket(self.ip,Type,_value="Right", _debounce = debounce)
-                time.sleep(0.05)
-                self.time_of_flight_instance[3] = Socket(self.ip,Type,_value="Back", _debounce = debounce)
-                time.sleep(1)
+                if self.time_of_flight_instance[0] is None:
+                    self.time_of_flight_instance[0] = Socket(self.ip,Type,_value="Left", _debounce = debounce)
+                    time.sleep(0.05)
+                    self.time_of_flight_instance[1] = Socket(self.ip,Type,_value="Center", _debounce = debounce)
+                    time.sleep(0.05)
+                    self.time_of_flight_instance[2] = Socket(self.ip,Type,_value="Right", _debounce = debounce)
+                    time.sleep(0.05)
+                    self.time_of_flight_instance[3] = Socket(self.ip,Type,_value="Back", _debounce = debounce)
+                    time.sleep(1)
 
+            elif Type == "FaceRecognition":
+                if self.face_recognition_instance is None:
+                    self.startFaceRecognition()
+                    print("FaceRecStarted")
+                    self.face_recognition_instance = Socket(self.ip,Type,_value="ComputerVision", _debounce = debounce)
+                
         else:
             print(" subscribe: Type name - ",Type,"is not recognised by the robot, use <robot_name>.printSubscriptionList() to see the list of possible Type names")
     
@@ -187,6 +244,15 @@ class Robot:
                     self.time_of_flight_instance = [None]*4
                 else:
                     print("Unsubscribe:",Type,"is not subscribed")
+
+            if Type == "FaceRecognition":
+
+                if self.face_recognition_instance is not None:
+                    self.face_recognition_instance.unsubscribe()
+                    self.face_recognition_instance = None
+                    self.stopFaceRecognition()
+                else:
+                    print("Unsubscribe:",Type, "is not subscribed")
 
         else:
             print(" unsubscribe: Type name - ",Type,"is not recognised by the robot, use <robot_name>.printSubscriptionList() to see the list of possible Type names")
@@ -267,9 +333,19 @@ class Socket:
                 "Inequality": "=",
                 "Value": self.value
             }]}
+        
+        elif Type == "FaceRecognition":
+
+            subscribeMsg = {
+                "Operation": "subscribe",
+                "Type": self.value,
+                "DebounceMs": self.debounce,
+                "EventName": self.event_name,
+                "Message": "",
+                "ReturnProperty": ""}
 
         return subscribeMsg
-    
+
     def get_unsubscribe_message(self,Type):
 
         if Type == "StringMessage":
@@ -280,6 +356,13 @@ class Socket:
                 "Message": ""}
 
         elif Type == "TimeOfFlight":
+            
+            unsubscribeMsg = {
+                "Operation": "unsubscribe",
+                "EventName": self.event_name,
+                "Message": ""}
+
+        elif Type == "FaceRecognition":
             
             unsubscribeMsg = {
                 "Operation": "unsubscribe",
