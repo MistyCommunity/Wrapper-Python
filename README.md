@@ -56,7 +56,7 @@ Chanaging LED, Changing image on screen, Playing audio, Moving Head, Driving Mis
 
 #### WebSockets
 
-Backpack string stream, Time of Flights
+Backpack string stream, Time of Flights, Face Recognition, Face Training, Face Detection
 
 ## Writing your own python program for Misty
 
@@ -159,6 +159,32 @@ Syntax: robot_name.stop()
 mia.stop()
 ```
 
+#### Train a Face for Misty to recognise
+
+Syntax: robot_name.learnFace(<name_of_person>)
+```
+mia.learnFace("Ian")
+```
+
+Misty takes 15 seconds to capture your face and another 15 seconds to process it!
+
+You would see a countdown printing in the terminal
+
+#### Get a list of the Learned Faces
+
+Syntax: robot_name.getLearnedFaces()
+```
+mia.printLearnedFaces()       # prints [Ian, CP, John, Allison, Woo,....]
+names = mia.getLearnedFaces() # returns the names of trained faces as a list
+```
+
+#### Delete all Learned Faces
+
+Syntax: robot_name.clearLearnedFaces()
+```
+mia.clearLearnedFaces()
+```
+
 ### WebSockets - a brief into 
 
 Consider all the above commands as a short handshakes while websockets work like you keep holding hands for a long time. You could continuosly stream data with websockets. Comes in handy when working with sensors on Misty, Arduino/Raspberry backpacks.
@@ -230,4 +256,37 @@ while True:
     if mia.time_of_flight()["Back"] <= 0.010:
         mia.stop()
         break
+```
+
+#### Computer Vision
+
+To start the Face Recognition / Face Detection you subscribe to the websocket first
+
+Syntax: robot_name.subscribe("FaceRecognition")
+```
+mia.subscribe("FaceRecognition")
+```
+This streams all data into the function call 'faceRec()'
+
+Syntax: robot_name.faceRec()
+
+Once subscribed to Face Recognition you could call faceRec() anytime to pull the latest data from Misty
+
+```
+while True:
+    data = mia.faceRec()
+    print(data)                     # {'personName' : 'Samanta', 'distance' : '95', 'elevation' : '6'} 
+    name      = data["personName"]  # You could extract specific values of your interest like this
+    distance  = data["distance"]    # units in mm
+    elevation = data["elevation"]
+
+```
+
+If a face is detected and the person is unknown the "personName" field would output "unknown_person"
+
+To stop Face Recognition / Face Detection
+
+Syntax: robot_name.unsubscribe("FaceRecognition")
+```
+mia.unsubscribe("FaceRecognition")
 ```
