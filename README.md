@@ -8,7 +8,7 @@ python >= 3.4
 
 requests
 
-websocket
+websocket 0.52.0
 
 ## Installing
 
@@ -30,7 +30,7 @@ Say you used the name 'misty_developer' in the conda create step
 ```
 source activate misty_developer
 pip install mistyPy
-pip install websocket
+pip install websocket-client==0.52.0
 ```
 skip step 2
 ```
@@ -45,7 +45,7 @@ use the command after setting up python >= 3.4
 ```
 pip install mistyPy
 pip install requests
-pip install websocket
+pip install websocket-client==0.52.0
 ```
 
 ## Current support
