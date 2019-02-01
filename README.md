@@ -1,6 +1,6 @@
 # mistyPy
 
-Official Python library to work with your Misty robot. Currently in BETA
+Python library to work with your Misty robot. Currently in BETA. Supported by the community and not Misty Robotics.
 
 ## Requirements
 
