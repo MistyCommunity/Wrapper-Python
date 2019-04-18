@@ -22,7 +22,7 @@ class Robot:
         self.time_of_flight_instance = [None]*4
         self.face_recognition_instance = None
 
-        self.available_subscriptions = ["StringMessage","TimeOfFlight","FaceDetection","FaceRecognition","LocomotionCommand","HaltCommand","SelfState","WorldState"]
+        self.available_subscriptions = ["SerialMessage", "TimeOfFlight","FaceRecognition","LocomotionCommand","HaltCommand","SelfState","WorldState"]
 
         self.populateImages()
         self.populateAudio()
@@ -163,7 +163,7 @@ class Robot:
                 return json.loads(data)
 
         else:
-            return " Backpack data is not subscribed, use the command robot_name.subscribe(\"StringMessage\")"
+            return " Backpack data is not subscribed, use the command robot_name.subscribe(\"SerialMessage\")"
 
     def time_of_flight(self):
         if self.time_of_flight_instance[0] is not None or self.time_of_flight_instance[1] is not None or self.time_of_flight_instance[2] is not None or self.time_of_flight_instance[3] is not None:
@@ -197,7 +197,7 @@ class Robot:
 
         if Type in self.available_subscriptions:
 
-            if Type == "StringMessage":
+            if Type == "SerialMessage":
                 if self.backpack_instance is  None:
                     self.backpack_instance = Socket(self.ip,Type,_value=value, _debounce = debounce)
                     time.sleep(1)
@@ -227,7 +227,7 @@ class Robot:
 
         if Type in self.available_subscriptions:
 
-            if Type == "StringMessage":
+            if Type == "SerialMessage":
 
                 if self.backpack_instance is not None:
                     self.backpack_instance.unsubscribe()
@@ -307,15 +307,15 @@ class Socket:
 
         self.event_name = str(randint(0,10000000000))
 
-        if Type == "StringMessage":
+        if Type == "SerialMessage":
 
             subscribeMsg = {
                 "Operation": "subscribe",
-                "Type": "StringMessage",
+                "Type": "SerialMessage",
                 "DebounceMs": self.debounce,
                 "EventName": self.event_name,
                 "Message": "",
-                "ReturnProperty": "StringMessage"}
+                "ReturnProperty": "SerialMessage"}
 
         elif Type == "TimeOfFlight":
 
@@ -348,7 +348,7 @@ class Socket:
 
     def get_unsubscribe_message(self,Type):
 
-        if Type == "StringMessage":
+        if Type == "SerialMessage":
 
             unsubscribeMsg = {
                 "Operation": "unsubscribe",
