@@ -30,11 +30,11 @@ class Robot:
 
     def changeLED(self,red,green,blue):
         assert red in range(0,256) and blue in range(0,256) and green in range(0,256), " changeLED: The colors need to be in 0-255 range"
-        requests.post('http://'+self.ip+'/api/led/change',json={"red": red,"green": green,"blue": blue})
+        requests.post('http://'+self.ip+'/api/led',json={"red": red,"green": green,"blue": blue})
 
     def changeImage(self,image_name,timeout=5):
         if image_name in self.images_saved:
-            requests.post('http://'+self.ip+'/api/images/change',json={'FileName': image_name ,'TimeOutSeconds': 5,'Alpha': 1})
+            requests.post('http://'+self.ip+'/api/images/display',json={'FileName': image_name ,'TimeOutSeconds': 5,'Alpha': 1})
         else:
             print(image_name,"not found on the robot, use <robot_name>.printImageList() to see the list of saved images")
 
@@ -45,26 +45,14 @@ class Robot:
             print(file_name,"not found on the robot, use <robot_name>.printAudioList() to see the list of saved audio files")
 
     def battery(self):
-        resp = requests.get('http://'+self.ip+'/api/info/battery')
+        resp = requests.get('http://'+self.ip+'/api/battery')
         for reply in resp.json():
         	return (reply['result'])
 
     def moveHead(self,roll,pitch,yaw,velocity=1):
         assert roll in range(-5,6) and pitch in range(-5,6) and yaw in range(-5,6), " moveHead: Roll, Pitch and Yaw needs to be in range -5 to +5"
         assert velocity in range(0,11), " moveHead: Velocity needs to be in range 0 to 10"
-        requests.post('http://'+self.ip+'/api/beta/head/move',json={"Pitch": pitch, "Roll": roll, "Yaw": yaw, "Velocity": velocity})
-    
-    def headRoll(self,roll,velocity=1):
-        assert roll in range(-5,6), " headRoll: Roll needs to be in range -5 to 5"
-        requests.post('http://'+self.ip+'/api/beta/head/position',json={"Axis": "roll", "position": roll, "Velocity": velocity})
-
-    def headPitch(self,pitch,velocity=1):
-        assert pitch in range(-5,6), " headPitch: Pitch needs to be in range -5 to 5"
-        requests.post('http://'+self.ip+'/api/beta/head/position',json={"Axis": "pitch", "position": pitch, "Velocity": velocity})
-    
-    def headYaw(self,yaw,velocity=1):
-        assert yaw in range(-5,6), " headYaw: Yaw needs to be in range -5 to 5"
-        requests.post('http://'+self.ip+'/api/beta/head/position',json={"Axis": "yaw", "position": yaw, "Velocity": velocity})
+        requests.post('http://'+self.ip+'/api/head',json={"Pitch": pitch, "Roll": roll, "Yaw": yaw, "Velocity": velocity})
 
     def drive(self,linear_velocity, angular_velocity):
         assert linear_velocity in range(-100,101) and angular_velocity in range(-100,101), " drive: The velocities needs to be in the range -100 to 100"
@@ -84,25 +72,25 @@ class Robot:
         
     def sendBackpack(self,message):
         assert isinstance(message, str), " sendBackpack: Message sent to the Backpack should be a string"
-        requests.post('http://'+self.ip+'/api/alpha/serialport',json={"Message": message})
+        requests.post('http://'+self.ip+'/api/serial',json={"Message": message})
 
     def populateImages(self):
         self.images_saved = []
-        resp = requests.get('http://'+self.ip+'/api/images')
+        resp = requests.get('http://'+self.ip+'/api/images/list')
         for reply in resp.json():
             for out in reply["result"]:
                 self.images_saved.append(out["name"])
 
     def populateAudio(self):
         self.audio_saved = []
-        resp = requests.get('http://'+self.ip+'/api/audio')
+        resp = requests.get('http://'+self.ip+'/api/audio/list')
         for reply in resp.json():
             for out in reply["result"]:
                 self.audio_saved.append(out["name"])
 
     def populateLearnedFaces(self):
         self.faces_saved = []
-        resp = requests.get('http://'+self.ip+'/api/beta/faces')
+        resp = requests.get('http://'+self.ip+'/api/faces')
         for reply in resp.json():
             self.faces_saved = reply["result"]
 
@@ -122,10 +110,10 @@ class Robot:
         print(self.available_subscriptions)
 
     def startFaceRecognition(self):
-        requests.post('http://'+self.ip+'/api/beta/faces/recognition/start')
+        requests.post('http://'+self.ip+'/api/faces/recognition/start')
     
     def stopFaceRecognition(self):
-        requests.post('http://'+self.ip+'/api/beta/faces/recognition/stop')
+        requests.post('http://'+self.ip+'/api/faces/recognition/stop')
 
     def printLearnedFaces(self):
         print(self.faces_saved)
@@ -134,12 +122,12 @@ class Robot:
         return self.faces_saved
 
     def clearLearnedFaces(self):
-        requests.post('http://'+self.ip+'/api/beta/faces/clearall')
+        requests.delete('http://'+self.ip+'/api/faces')
         self.faces_saved = []
     
     def learnFace(self,name):
         assert isinstance(name, str), " trainFace: name must be a string"
-        requests.post('http://'+self.ip+'/api/beta/faces/training/start',json={"FaceId": name})
+        requests.post('http://'+self.ip+'/api/faces/training/start',json={"FaceId": name})
         print("Please look at Misty's face for 15 seconds..")
         for i in range(15):
             print(15-i)
@@ -220,7 +208,7 @@ class Robot:
                     self.face_recognition_instance = Socket(self.ip,Type,_value="ComputerVision", _debounce = debounce)
                 
         else:
-            print(" subscribe: Type name - ",Type,"is not recognised by the robot, use <robot_name>.printSubscriptionList() to see the list of possible Type names")
+            print(" subscribe: Type name - ",Type,"is not recognized by the robot, use <robot_name>.printSubscriptionList() to see the list of possible Type names")
     
     def unsubscribe(self,Type):
         assert isinstance(Type, str), " unsubscribe: type name need to be string"
