@@ -94,22 +94,20 @@ class Robot:
     def populateImages(self):
         self.images_saved = []
         resp = requests.get('http://'+self.ip+'/api/images/list')
-        for reply in resp.json():
-            for out in reply["result"]:
-                self.images_saved.append(out["name"])
+        for out in resp.json()["result"]:
+            self.images_saved.append(out["name"])
 
     def populateAudio(self):
         self.audio_saved = []
         resp = requests.get('http://'+self.ip+'/api/audio/list')
-        for reply in resp.json():
-            for out in reply["result"]:
-                self.audio_saved.append(out["name"])
+        for out in resp.json()["result"]:
+            self.audio_saved.append(out["name"])
 
     def populateLearnedFaces(self):
         self.faces_saved = []
         resp = requests.get('http://'+self.ip+'/api/faces')
-        for reply in resp.json():
-            self.faces_saved = reply["result"]
+        for out in resp.json()["result"]:
+            self.faces_saved.append(out)
 
     def printImageList(self):
         print(self.images_saved)
