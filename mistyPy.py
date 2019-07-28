@@ -3,6 +3,7 @@ import json
 import threading
 import time
 import websocket
+
 try:
     import thread
 except ImportError:
@@ -49,10 +50,26 @@ class Robot:
         for reply in resp.json():
         	return (reply['result'])
 
-    def moveHead(self,roll,pitch,yaw,velocity=1):
-        assert roll in range(-5,6) and pitch in range(-5,6) and yaw in range(-5,6), " moveHead: Roll, Pitch and Yaw needs to be in range -5 to +5"
-        assert velocity in range(0,11), " moveHead: Velocity needs to be in range 0 to 10"
-        requests.post('http://'+self.ip+'/api/head',json={"Pitch": pitch, "Roll": roll, "Yaw": yaw, "Velocity": velocity})
+    def moveHead(self,roll,pitch,yaw,velocity=10, units="degrees"):
+        if(units == "position"):
+            assert roll in range(-5,6) and pitch in range(-5,6) and yaw in range(-5,6), " moveHead: Roll, Pitch and Yaw needs to be in range -5 to +5"
+        elif(units == "radians"):
+            assert roll in range(-.75, .75) and pitch in range(-.1662,.6094) and yaw in range(-1.57, 1.57), " moveHead: invalid positioning"
+        else:
+            units = "degrees"
+            assert pitch in range(-9.5, 34.9) and roll in range(-43,43) and yaw in range(-90, 90), " moveHead: invalid positioning"
+
+        assert velocity in range(0,100), " moveHead: Velocity needs to be in range 0 to 100"
+        requests.post('http://'+self.ip+'/api/head',json={"Pitch": pitch, "Roll": roll, "Yaw": yaw, "Velocity": velocity, "Units": units})
+
+    def moveHeadPosition(self, pitch, roll, yaw, velocity):
+        self.moveHead(pitch, roll, yaw, velocity, "position")
+    
+    def moveHeadRadians(self, pitch, roll, yaw, velocity):
+        self.moveHead(pitch, roll, yaw, velocity, "radians")
+    
+    def moveHeadDegrees(self, pitch, roll, yaw, velocity):
+        self.moveHead(pitch, roll, yaw, velocity, "degrees")
 
     def drive(self,linear_velocity, angular_velocity):
         assert linear_velocity in range(-100,101) and angular_velocity in range(-100,101), " drive: The velocities needs to be in the range -100 to 100"
