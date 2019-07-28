@@ -52,14 +52,14 @@ class Robot:
 
     def moveHead(self,roll,pitch,yaw,velocity=10, units="degrees"):
         if(units == "position"):
-            assert roll in range(-5,6) and pitch in range(-5,6) and yaw in range(-5,6), " moveHead: Roll, Pitch and Yaw needs to be in range -5 to +5"
+            assert -5.0 <= roll <= 5.0 and -5.0 <= pitch <= 5.0 and -5.0 <= yaw <= 5.0, " moveHead: Roll, Pitch and Yaw needs to be in range -5 to +5"
         elif(units == "radians"):
-            assert roll in range(-.75, .75) and pitch in range(-.1662,.6094) and yaw in range(-1.57, 1.57), " moveHead: invalid positioning"
+            assert -.75 <= roll <= .75 and -.1662 <= pitch <= .6094 and -1.57 <= yaw <= 1.57, " moveHead: invalid positioning"
         else:
             units = "degrees"
-            assert pitch in range(-9.5, 34.9) and roll in range(-43,43) and yaw in range(-90, 90), " moveHead: invalid positioning"
+            assert -9.5 <= pitch <= 34.9 and -43 <= roll <= 43 and -90 <= yaw <= 90, " moveHead: invalid positioning"
 
-        assert velocity in range(0,100), " moveHead: Velocity needs to be in range 0 to 100"
+        assert 0.0 <= velocity <= 100.0, " moveHead: Velocity needs to be in range 0 to 100"
         requests.post('http://'+self.ip+'/api/head',json={"Pitch": pitch, "Roll": roll, "Yaw": yaw, "Velocity": velocity, "Units": units})
 
     def moveHeadPosition(self, pitch, roll, yaw, velocity):
@@ -72,16 +72,16 @@ class Robot:
         self.moveHead(pitch, roll, yaw, velocity, "degrees")
 
     def drive(self,linear_velocity, angular_velocity):
-        assert linear_velocity in range(-100,101) and angular_velocity in range(-100,101), " drive: The velocities needs to be in the range -100 to 100"
+        assert -100 <= linear_velocity <= 100 and -100 <= angular_velocity <=100, " drive: The velocities needs to be in the range -100 to 100"
         requests.post('http://'+self.ip+'/api/drive',json={"LinearVelocity": linear_velocity,"AngularVelocity": angular_velocity})
 
     def driveTime(self,linear_velocity, angular_velocity,time_in_milli_second):
-        assert linear_velocity in range(-100,101) and angular_velocity in range(-100,101), " driveTime: The velocities needs to be in the range -100 to 100"
+        assert -100 <= linear_velocity <= 100 and -100 <= angular_velocity <=100, " drive: The velocities needs to be in the range -100 to 100"
         assert isinstance(time_in_milli_second, int) or isinstance(time_in_milli_second, float), " driveTime: Time should be an integer or float and the unit is milli seconds"
         requests.post('http://'+self.ip+'/api/drive/time',json={"LinearVelocity": linear_velocity,"AngularVelocity": angular_velocity, "TimeMS": time_in_milli_second})
 
     def driveTrack(self,left_track_speed,right_track_speed):
-        assert left_track_speed in range(-100,101) and right_track_speed in range(-100,101), " driveTrack: The velocities needs to be in the range -100 to 100"
+        assert -100 <= left_track_speed <= 101 and right_track_speed in -100 <= right_track_speed <= 100, " driveTrack: The velocities needs to be in the range -100 to 100"
         requests.post('http://'+self.ip+'/api/drive/track',json={"LeftTrackSpeed": left_track_speed,"RightTrackSpeed": right_track_speed})
     
     def stop(self):
