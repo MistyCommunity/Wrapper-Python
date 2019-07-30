@@ -146,7 +146,6 @@ class Robot:
         requests.delete('http://'+self.ip+'/api/faces')
         self.faces_saved = []
 
-    # TODO: Get position values
     def moveArm(self, arm, position, velocity, units = "degrees"):
         arm = arm.lower()
         units = units.lower()
@@ -159,6 +158,8 @@ class Robot:
             assert -90 < position <= 90, "Expected value -90< <=90"
         elif(units == "radians"):
             assert -1.5708 < position <= 1.5708, "Expected value -1.5708< <=1.5708"
+        else:
+            assert 0 <= position <= 10, "Expected value 0 <= >= 10"
 
         requests.post('http://'+self.ip+'/api/arms', json={"Arm": arm, "Position": position, "Velocity": velocity, "Units": units})
 
@@ -181,12 +182,10 @@ class Robot:
             assert -90 < rightArmPosition <= 90 and -90 < leftArmPosition <= 90, "Expected value -90< <=90"
         elif(units == "radians"):
             assert -1.5708 < rightArmPosition <= 1.5708 and -1.5708 < leftArmPosition <= 1.5708, "Expected value -1.5708< <=1.5708"
+        else:
+            assert 0 <= rightArmPosition <= 10 and 0 <= leftArmPosition <= 10, "Expected value 0 <= >= 10"
 
-        # The API call doesn't seem to work. This is a workaround
-        # requests.post('http://'+self.ip+'/api/arms', json={"LeftArmPosition": leftArmPosition, "RightArmPosition": rightArmPosition, "LeftArmVelocity": leftArmVelocity, "RightArmVelocity": rightArmVelocity, "Units": units})
-        
-        self.moveArm("left", leftArmPosition, leftArmVelocity, units)
-        self.moveArm("right", rightArmPosition, rightArmVelocity, units)
+        requests.post('http://' + self.ip + '/api/arms/set', json={"leftArmPosition": leftArmPosition, "rightArmPosition": rightArmPosition, "leftArmVelocity": leftArmVelocity, "rightArmVelocity": rightArmVelocity, "units": units})
 
     def moveArmsDegrees(self, rightArmPosition, leftArmPosition, rightArmVelocity, leftArmVelocity):
         self.moveArms(rightArmPosition, leftArmPosition, rightArmVelocity, leftArmVelocity, "degrees")
