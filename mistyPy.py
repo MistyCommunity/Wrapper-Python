@@ -3,6 +3,7 @@ import json
 import threading
 import time
 import websocket
+
 try:
     import thread
 except ImportError:
@@ -34,37 +35,55 @@ class Robot:
 
     def changeImage(self,image_name,timeout=5):
         if image_name in self.images_saved:
-            requests.post('http://'+self.ip+'/api/images/display',json={'FileName': image_name ,'TimeOutSeconds': 5,'Alpha': 1})
+            requests.post('http://' + self.ip + '/api/images/display',json={'FileName': image_name ,'TimeOutSeconds': 5,'Alpha': 1})
         else:
             print(image_name,"not found on the robot, use <robot_name>.printImageList() to see the list of saved images")
 
     def playAudio(self,file_name):
         if file_name in self.audio_saved:
-            requests.post('http://'+self.ip+'/api/audio/play',json={"AssetId": file_name})
+            requests.post('http://' + self.ip + '/api/audio/play',json={"AssetId": file_name})
         else:
             print(file_name,"not found on the robot, use <robot_name>.printAudioList() to see the list of saved audio files")
 
     def battery(self):
-        resp = requests.get('http://'+self.ip+'/api/battery')
+        resp = requests.get('http://' + self.ip + '/api/battery')
         for reply in resp.json():
         	return (reply['result'])
 
-    def moveHead(self,roll,pitch,yaw,velocity=1):
-        assert roll in range(-5,6) and pitch in range(-5,6) and yaw in range(-5,6), " moveHead: Roll, Pitch and Yaw needs to be in range -5 to +5"
-        assert velocity in range(0,11), " moveHead: Velocity needs to be in range 0 to 10"
-        requests.post('http://'+self.ip+'/api/head',json={"Pitch": pitch, "Roll": roll, "Yaw": yaw, "Velocity": velocity})
+    def moveHead(self,roll,pitch,yaw,velocity=10, units="degrees"):
+        if(units == "position"):
+            assert -5.0 <= roll <= 5.0 and -5.0 <= pitch <= 5.0 and -5.0 <= yaw <= 5.0, " moveHead: Roll, Pitch and Yaw needs to be in range -5 to +5"
+        elif(units == "radians"):
+            assert -.75 <= roll <= .75 and -.1662 <= pitch <= .6094 and -1.57 <= yaw <= 1.57, " moveHead: invalid positioning"
+        else:
+            units = "degrees"
+            assert -9.5 <= pitch <= 34.9 and -43 <= roll <= 43 and -90 <= yaw <= 90, " moveHead: invalid positioning"
+
+        assert 0.0 <= velocity <= 100.0, " moveHead: Velocity needs to be in range 0 to 100"
+        requests.post('http://'+self.ip+'/api/head',json={"Pitch": pitch, "Roll": roll, "Yaw": yaw, "Velocity": velocity, "Units": units})
+
+    def moveHeadPosition(self, pitch, roll, yaw, velocity):
+        self.moveHead(pitch, roll, yaw, velocity, "position")
+    
+    def moveHeadRadians(self, pitch, roll, yaw, velocity):
+        self.moveHead(pitch, roll, yaw, velocity, "radians")
+    
+    def moveHeadDegrees(self, pitch, roll, yaw, velocity):
+        self.moveHead(pitch, roll, yaw, velocity, "degrees")
 
     def drive(self,linear_velocity, angular_velocity):
-        assert linear_velocity in range(-100,101) and angular_velocity in range(-100,101), " drive: The velocities needs to be in the range -100 to 100"
+        assert -100 <= linear_velocity <= 100 and -100 <= angular_velocity <= 100, " drive: The velocities needs to be in the range -100 to 100"
         requests.post('http://'+self.ip+'/api/drive',json={"LinearVelocity": linear_velocity,"AngularVelocity": angular_velocity})
 
     def driveTime(self,linear_velocity, angular_velocity,time_in_milli_second):
-        assert linear_velocity in range(-100,101) and angular_velocity in range(-100,101), " driveTime: The velocities needs to be in the range -100 to 100"
+        assert -100 <= linear_velocity <= 100 and -100 <= angular_velocity <=100, " drive: The velocities needs to be in the range -100 to 100"
         assert isinstance(time_in_milli_second, int) or isinstance(time_in_milli_second, float), " driveTime: Time should be an integer or float and the unit is milli seconds"
-        requests.post('http://'+self.ip+'/api/drive/time',json={"LinearVelocity": linear_velocity,"AngularVelocity": angular_velocity, "TimeMS": time_in_milli_second})
+        json = {"LinearVelocity": linear_velocity,"AngularVelocity": angular_velocity, "TimeMS": time_in_milli_second}
+        
+        requests.post('http://'+self.ip+'/api/drive/time',json = {"LinearVelocity": linear_velocity,"AngularVelocity": angular_velocity, "TimeMS": time_in_milli_second})
 
     def driveTrack(self,left_track_speed,right_track_speed):
-        assert left_track_speed in range(-100,101) and right_track_speed in range(-100,101), " driveTrack: The velocities needs to be in the range -100 to 100"
+        assert -100 <= left_track_speed <= 100 and right_track_speed in -100 <= right_track_speed <= 100, " driveTrack: The velocities needs to be in the range -100 to 100"
         requests.post('http://'+self.ip+'/api/drive/track',json={"LeftTrackSpeed": left_track_speed,"RightTrackSpeed": right_track_speed})
     
     def stop(self):
@@ -77,22 +96,20 @@ class Robot:
     def populateImages(self):
         self.images_saved = []
         resp = requests.get('http://'+self.ip+'/api/images/list')
-        for reply in resp.json():
-            for out in reply["result"]:
-                self.images_saved.append(out["name"])
+        for out in resp.json()["result"]:
+            self.images_saved.append(out["name"])
 
     def populateAudio(self):
         self.audio_saved = []
         resp = requests.get('http://'+self.ip+'/api/audio/list')
-        for reply in resp.json():
-            for out in reply["result"]:
-                self.audio_saved.append(out["name"])
+        for out in resp.json()["result"]:
+            self.audio_saved.append(out["name"])
 
     def populateLearnedFaces(self):
         self.faces_saved = []
         resp = requests.get('http://'+self.ip+'/api/faces')
-        for reply in resp.json():
-            self.faces_saved = reply["result"]
+        for out in resp.json()["result"]:
+            self.faces_saved.append(out)
 
     def printImageList(self):
         print(self.images_saved)
@@ -110,7 +127,7 @@ class Robot:
         print(self.available_subscriptions)
 
     def startFaceRecognition(self):
-        requests.post('http://'+self.ip+'/api/faces/recognition/start')
+        requests.post('http://' + self.ip + '/api/faces/recognition/start')
     
     def stopFaceRecognition(self):
         requests.post('http://'+self.ip+'/api/faces/recognition/stop')
@@ -124,7 +141,57 @@ class Robot:
     def clearLearnedFaces(self):
         requests.delete('http://'+self.ip+'/api/faces')
         self.faces_saved = []
+
+    def moveArm(self, arm, position, velocity, units = "degrees"):
+        arm = arm.lower()
+        units = units.lower()
+
+        assert arm == "left" or arm == "right", "Invalid arm requested. Please use 'left' or 'right'"
+        assert units == "degrees" or units == "radians" or units == "position", "Invalid unit. Please use 'degrees', 'radians', or 'position'"
+        assert 0 < velocity <= 100, "Velocity should be between 0 and 100"
+
+        if(units == "degrees"):
+            assert -90 < position <= 90, "Expected value -90< <=90"
+        elif(units == "radians"):
+            assert -1.5708 < position <= 1.5708, "Expected value -1.5708< <=1.5708"
+        else:
+            assert 0 <= position <= 10, "Expected value 0 <= >= 10"
+
+        requests.post('http://'+self.ip+'/api/arms', json={"Arm": arm, "Position": position, "Velocity": velocity, "Units": units})
+
+    def moveArmDegrees(self, arm, position, velocity):
+        self.moveArm(arm, position, velocity, "degrees")
+
+    def moveArmPosition(self, arm, position, velocity):
+        self.moveArm(arm, position, velocity, "postion")
     
+    def moveArmRadians(self, arm, position, velocity):
+        self.moveArm(arm, position, velocity, "radians")
+
+    def moveArms(self, rightArmPosition, leftArmPosition, rightArmVelocity, leftArmVelocity, units = "degrees"):
+        units = units.lower()
+
+        assert units == "degrees" or units == "radians" or units == "position", "Invalid unit. Please use 'degrees', 'radians', or 'position'"
+        assert 0 < rightArmVelocity <= 100 and 0 < leftArmVelocity <= 100, "Velocity should be between 0 and 100"
+
+        if(units == "degrees"):
+            assert -90 < rightArmPosition <= 90 and -90 < leftArmPosition <= 90, "Expected value -90< <=90"
+        elif(units == "radians"):
+            assert -1.5708 < rightArmPosition <= 1.5708 and -1.5708 < leftArmPosition <= 1.5708, "Expected value -1.5708< <=1.5708"
+        else:
+            assert 0 <= rightArmPosition <= 10 and 0 <= leftArmPosition <= 10, "Expected value 0 <= >= 10"
+
+        requests.post('http://' + self.ip + '/api/arms/set', json={"leftArmPosition": leftArmPosition, "rightArmPosition": rightArmPosition, "leftArmVelocity": leftArmVelocity, "rightArmVelocity": rightArmVelocity, "units": units})
+
+    def moveArmsDegrees(self, rightArmPosition, leftArmPosition, rightArmVelocity, leftArmVelocity):
+        self.moveArms(rightArmPosition, leftArmPosition, rightArmVelocity, leftArmVelocity, "degrees")
+    
+    def moveArmsPosition(self, rightArmPosition, leftArmPosition, rightArmVelocity, leftArmVelocity):
+        self.moveArms(rightArmPosition, leftArmPosition, rightArmVelocity, leftArmVelocity, "position")
+    
+    def moveArmsRadians(self, rightArmPosition, leftArmPosition, rightArmVelocity, leftArmVelocity):
+        self.moveArms(rightArmPosition, leftArmPosition, rightArmVelocity, leftArmVelocity, "radians")
+
     def learnFace(self,name):
         assert isinstance(name, str), " trainFace: name must be a string"
         requests.post('http://'+self.ip+'/api/faces/training/start',json={"FaceId": name})
