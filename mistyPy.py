@@ -45,6 +45,13 @@ class Robot:
         else:
             print(file_name,"not found on the robot, use <robot_name>.printAudioList() to see the list of saved audio files")
 
+    def uploadAudio(self, file_name, apply=False, overwrite=False):
+		url = 'http://' + self.ip + '/api/audio'	
+		with open(file_name, 'rb') as f:			
+			encoded_string = base64.b64encode(f.read()).decode('ascii')				
+			data={"FileName": file_name, "Data": encoded_string, "ImmediatelyApply" : apply, "OverwriteExisting": overwrite}			
+			requests.post(url, json=data)		
+
     def battery(self):
         resp = requests.get('http://' + self.ip + '/api/battery')
         for reply in resp.json():
